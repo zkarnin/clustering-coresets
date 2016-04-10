@@ -34,6 +34,9 @@
 \newcommand{\note}[1]{\textbf{\textcolor{red}{#1}}}
 
 \newcommand{\cost}{\text{COST}}
+\newcommand{\opt}{\text{OPT}}
+\newcommand{\topt}{\widetilde{\text{OPT}}}
+\newcommand{\N}{{\cal N}}
 
 \title{Smaller and simpler coresets for clustering}
 
@@ -48,93 +51,180 @@ Edo Liberty\\ \texttt{Yahoo Research}\\ \texttt{\small edo@yahoo-inc.com}
 
 \begin{abstract}
 abstract\end{abstract}
-\section{Version 2?}
+
+\section{Preliminaries}
+For a random variable $Y$ we write $Y \preceq \N(\mu,\sigma^2)$ to denote that $Y$ is a sub-gaussian with mean $\mu$ and variance $\sigma^2$.
+
+Let $\cal X$ be a semi-metric space endowed with a $z$-semi-metric $d$. Recall that a $z$-semi metric $d$ has the properties (1) $d(x,y)=d(y,x)$ (2) $d(x,y) \geq 0$ with equality iff $x=y$ and (3) $d(x,w) \leq z(d(x,y)+d(y,w))$. Our results apply to the generelized $k$-medians problem defined as follows
+\begin{definition}
+In the (generalized) $k$-medians problem, the input is a set of points $X = \{x_1,\ldots,x_n\} \subseteq {\cal X}$. The objective is to find a set of $k$ centers $C = \{c_1,\ldots,c_k\}$ minimizing the cost 
+$$\cost(C,X) = \sum_{x \in X} \min_{c \in C} d(x,c)$$
+\end{definition}
+In what follows we write $d(x,C) = \min_{c \in C}d(x,c)$ for short.
+
 According to \cite{AggarwalDK09}, adaptively sampling $O(k)$ points from $X$ gives a constant factor approximation to $k$-means.
+\note{elaborate, with an exact lemma}
+
+\section{Compact operations}
+The core of our techniques is a compact operation. This operation gets as input a set $M$ of $m$ points, and outputs a set $M'$ of $m' \leq 2m/3$ points of weights 1 and $2$ such that for any fixed $k$ centers $C$,
+$$ \cost(C,M) = \cost(C,M) (1 \pm \eps) $$
+w.h.p. The compact operation requires an oracle to a constant factor approximation algorithm for $k$-medians. This oracle provides a set of $k$ centers whose cost is at most $\alpha>1$ times the minimum obtainable cost.
+The compact operation is described in Algorithm~\ref{alg:shrink}.
+
+
 \begin{algorithm} 
 \begin{algorithmic}
 \caption{Shrink} \label{alg:shrink}
-\State Find the optimal cluster centers $C$
-\State Keep all points such that $d(x_i, C) > \eps^2 OPT /p\log(1/\delta)$ with weight $1$.
-\State From every cluster of odd cardinality, remove one point and keep it with weight $1$.
-\State Within each cluster, pair points arbitrarily. From each pair randomly choose one of them. Set the weight of the chosen one to $2$.
+\State {\bf Input} $\eps,\delta >0$, a set $M \subseteq {\cal X}$, and an oracle for $\alpha$-optimal solution for $k$-medians.
+\State Invoke the oracle to find $\alpha$-optimal cluster centers $C$. Denote by $\topt$ its cost.
+\State arbitrarily divide into pairs all points that are in the same cluster having $d(x,C) \leq \eps^2 \topt / \left(z \alpha^2 \log(1/\delta)\right)$.
+\State Let $M'$ be the set containing all unpaired points with weight $1$, and a uniformly random item from each pair with weight $2$.
+\State {\bf Output} $M'$
 \end{algorithmic}
 \end{algorithm}
 
+We begin the analysis with a simpler observation regarding the size of $M'$. By Markov's inequality, at most 
+$$\ceil{\frac{ z \alpha^2 \log(1/\delta)}{\eps^2}}$$
+points are excluded from pairing due to having a large cost. In addition, there may be at most $1$ point left unpaired in each cluster due to an odd number of points. Hence, we must have at most 
+$$m_0 = \ceil{k+\frac{ z \alpha^2 \log(1/\delta)}{\eps^2}}$$
+unpaired points, and it follows that 
+$$ |M'| \leq (|M|+m_0)/2 $$
 
-
-
-\section{compact operations}
-We define the generalized $k$-medians problem as follows. A $p$-semi-metric space is a space with a distance function $d$ such that (1) $d(x,y) \geq 0$ (2) $d(x,y)=0$ iff $x=y$ and (3) $d(x,y) \leq p(d(x,z) + d(z,y))$ for any $z$. \note{I'll just assume distance - but this works for any constant $p$.}
-
-Given $n$ points $X = \{x_1,\ldots,x_n\}$ in a metric space, the $k$ means cost of a fixed set of centers $C = \{c_1,\ldots,c_k\}$ is 
-$$ \text{COST}(C,X) = \sum_i \min_j d(x_i,c_j)$$
-The $k$ medians problem is that of finding the $k$ centers minimizing the above cost for a given set of points $X$. 
-
-
-%Denote by $c_1^*,\ldots,c_k^*$ a set of centers achieving the smallest cost. Assume it is well-defined by imposing an arbitrary order over all possible $k$-tuples of the domain. Denote
-%$$ \cost^*(x_i) = \min_j d(x_i,c_j^*)$$
-%the cost associated with the point $x_i$ in the optimal solution
-
-
-
-Consider the following compact operation on $3k$ points. First, find a $2$-approximate $\tilde{c}_1,\ldots,\tilde{c}_2$ solution for $k$-means for these $m=3k$ points $M=\{x_1,\ldots,x_{3k}\}$. Now, define the cluster of a point $x$ as $\min_j d(x,\tilde{c}_j)$. Next find $k$ pairs of points, where we abuse notations and denote them by $(x_1,x_2),\ldots,(x_{2k-1},x_{2k})$ such that for any odd $i$, $x_i,x_{i+1}$ are in the same cluster.
-
-We observe that 
-$$ \sum_{i=1}^k d(x_{2i-1},x_{2i}) \leq \sum_{i=1}^k d(x_{2i-1},\tilde{c}_{j(2i-1)}) + d(x_{2i},,\tilde{c}_{j(2i)}) $$
-with $j(i)$ the cluster for which point $x_i$ belongs to. Hence
-
-\begin{equation} \label{eq:distance_cost}
-\sum_{i=1}^k d(x_{2i-1},x_{2i}) \leq \sum_{i=1}^{3k} d(x_{i},\tilde{c}_{j(i)}) \leq 2\cost^*(M) 
+Let us now discuss the cost associated with $M,M'$ and an arbitrary fixed $k$-cluster set $C$. Denote by $P$ the set of pairs of points we obtain during the compact operation. Then
+$$ \cost(C,M') - \cost(C,M) = \sum_{(x,x') \in P} Y_{x,x'} \left( d(x,C) - d(x',C) \right) $$
+where the $Y_{x,x'}$ are i.i.d.\ uniform Rademacher variables. The first immediate conclusion is that
+\begin{equation} \label{eq:compact_mean0}
+\E[\cost(C,M')] = \cost(C,M)
 \end{equation}
-Here, $\cost^*(M)$ is the cost of the optimal $k$-means for the set of points $M$ and $C$ is an arbitrary set of $k$ centers.
+meaning that the error is unbiased. Furthermore, notice that 
+$$\forall (x,x') \in P, \ \ |d(x,C)-d(x',C)| \leq z d(x,x') \leq \frac{z \eps^2 \topt}{z \alpha^2 \log(1/\delta)} \leq \frac{\eps^2 \cost(C,M)}{ \alpha \log(1/\delta)}$$
+and
+$$\sum_{(x,x') \in P}|d(x,C)-d(x',C)| \leq z \sum_{(x,x') \in P} d(x,C) + d(x',C) \leq \alpha \cost(C,M)$$
+By applying the inequality $\sum a_i^2 \leq \max_i a_i \cdot \sum |a_i|$ we get
+\begin{equation} \label{eq:compact:sqsum}
+\sum_{(x,x') \in P}\left( d(x,C)-d(x',C) \right)^2 \leq \frac{\eps^2 \cost(C,M)^2}{  \log(1/\delta)}
+\end{equation}
+By Equations~\eqref{eq:compact_mean0} and~\eqref{eq:compact:sqsum} we get
+\begin{equation} \label{eq:compact_subg}
+\cost(C,M') - \cost(C,M) \preceq \N \left(0,\frac{\eps^2 \cost(C,M)^2}{  \log(1/\delta)} \right)
+\end{equation}
 
-Now, consider the following compact operation. In each of the above chosen pairs, one point is chosen uniformly at random. The non-chosen point is discarded, and the chosen point gets a weight of $2$. Denote by $M'$ the random set of points after this compact operation. Notice that for any set of $k$ centers $C$ we have
-$$ \E[\cost(c,M')] = \sum_{i=1}^{3k} \E[Z_i] \min_j d(x_i,c_j)$$
-where $Z_i$ is a random variable that always takes a value of $1$ for a point that is not paired, and takes a value of either $0$ or $2$ uniformly at random for paired points. It follows that $\E[Z_i]=1$ and 
-$$ \E[\cost(C,M')] = \sum_{i=1}^{3k} \E[Z_i] \min_j d(x_i,c_j) = \cost(C,M)$$
+\section{Streaming algorithm}
+The streaming algorithm is based on the above compact operation. We maintain a set of \emph{Compactors}. Each such compactor is fed items and stores them in a buffer. Once the buffer contains $3m_0$ (for $m_0 = \ceil{k+\frac{ z \alpha^2 \log(1/\delta)}{\eps^2}}$) items, the compacter performs a compact operation. As a result it's buffer is emptied and two streams are outputted. One contains the (at most $m_0$) elements of $M'$ of weight $1$. The other contains the (at most $3m_0/2$) elements of $M'$ of weight $2$. Each stream is fed into a different compactor. All compactors observing items of weight $2^h$ output the items of weight $2^{h+1}$ to the same compactor.
 
-Now, let us bound the worst case deviation from the mean. For every chosen pair of points $(x,x')$ we have that both points are in the same cluster defined by a center $c$. Hence, by the triangle inequality we have that
-$$ |\min_j d(x,c_j) - \min_j d(x',c_j)| =   | d(x,c) - d(x',c)| \leq d(x,x')$$
-meaning that  by Equation~\eqref{eq:distance_cost},
-$$ |\cost(C,M') - \cost(C,M)| \leq 2\cost^*(M)  $$
+Let us now compute the memory complexity of our sketch. First, notice that the first compactor observes $n$ and outputs at most $n/3$ points of weight $1$. The total number of items of weight $2$ being fed to the initial compactor observing items of weight $2$ can be at most $n/2$ since they originate from different points in the stream. It follows, since a compactor does not provide any output until observing $3m_0$ points, that the total number of compactors observing items of weight $1$ is $\log_3(n/3m_0)$ and equivalently, the total number of compactors observing items of weight $2^h$ is $\log_3(n/(3m_0 2^h))$. Hence, the overall number of compactors is
+$O(\log(n/m_0)^2)$ and the total memory complexity is
+$$ O\left( \log(n/m_0)^2  \left( k+\frac{ z \alpha^2 \log(1/\delta)}{\eps^2} \right) \right) $$
 
-\section{one layer}
-In the following we describe a sequence of compact operations that result in a core-set consisting of (1) a small set of points of weight $1$ and (2) a set of at most $n/2$ points of weight $2$. As input, this process requires parameters $\eps,\delta >0$. The process is designed such that the core-set induces the same cost, up to an additive error of at most roughly $\eps \cost^*(X)$ with probability $1-\delta$. The small size of (1) will in fact be of size  $O(\log(n)^2 k \log(1/\delta)/\eps^2)$.
+Now, let us consider the total error of the sketch. We denote by $O$ the set of all used compactor. For a compactor $o \in O$ we define $X(o)$ the set of points it observes and $X_0(o), X_1(o), X_2(o)$ the (weighted) sets of points containing the points in its buffer at termination time, the points it outputs having the same weight as the input points and the points it outputs having a double weight compared to its input points, respectively. By Equation~\ref{eq:compact_subg} we have that for any $k$-cluster set $C$ it holds that
+$$\cost(C,X(o)) -  \cost\left(C,X_0(o) \cup X_1(o) \cup X_2(o) \right) \preceq \N \left(0,\frac{\eps^2 \cost(C,X(o))^2}{  \log(1/\delta)} \right)$$
+Now, let $O_h$ be the set of compactors observing items of weight $w^h$. We index these compactors in a way that compactor $o_1^h$ feeds items of weight $2^h$ to $o_2^h$, $o_2^h$ to $o_3^h$ and so on. Since $X(o^h_{i+1}) = X_1(o^h_i) \subseteq X(o^h_i)$ we have that $\cost(C,X(o^h_{i+1})) \leq \cost(C,X(o^h_i))$ and 
+$$\cost(C,X(o^h_1)) - \sum_{o \in O_h} \left( \cost(C,X_0(o)) + \cost(C,X_2(o)) \right) = $$
+$$ \sum_{o \in O_h} \cost(C,X(o)) -  \cost\left(C,X_0(o) \cup X_1(o) \cup X_2(o) \right) \preceq $$
+$$ \N \left(0,\frac{\eps^2 \sum_{o \in O_h} \cost(C,X(o))^2}{  \log(1/\delta)} \right) \preceq $$
+$$ \N \left(0,\frac{\eps^2 \log_3(n/(3m_0 2^h)) \cost(C,X(o^h_1))^2}{  \log(1/\delta)} \right)  $$
+By standard concentration bounds we get for $\eps' = \eps \sqrt{\log_3(n/m_0)}$ and $\delta' = O(\delta)$ that
+$$\Pr \left[ \left| \cost(C,X(o^h_1)) - \sum_{o \in O_h} \left( \cost(C,X_0(o)) + \cost(C,X_2(o)) \right) \right| >  \eps' \cost(C,X(o^h_1))\right]<\delta' $$
+This implies in particular, for the set $X(o^{h+1}_1) = \cup_{o \in O_h}X_2(o)$, that w.p.\ at least $1-\delta'$
+$$ \cost(C,X(o_1^{h+1})) = \cost(C,\cup_{o \in O_h}X_2(o)) < (1+\eps') \cost(C,X(o_1^h)) $$
+It follows that for $H$, being the largest `height' of compactors in our sketch and $\delta'' = H\delta' = O(\log(n/m_0)\delta)$ it holds w.p.\ at least $1-\delta''$ that
+$$ \left| \cost(C,X) - \sum_{o \in O} \cost(C,X_0(o)) \right| =$$
+$$ \left| \sum_{h=0}^{H}  \cost(C,X(o^h_1)) - \sum_{o \in O_h} \left( \cost(C,X_0(o)) + \cost(C,X_2(o)) \right) \right| \leq$$
+$$ \left| \sum_{h=0}^{H}  \eps' \cost(C,X(o^h_1)) \right| \leq$$
+$$ \left| \sum_{h=0}^{H} (1+\eps')^h \eps' \cost(C,X) \right| =$$
+$$ O(\log(n/m_0)^{1.5}\eps \cost(C,X) $$
+for $\eps = O(1/\log(n/m_0)^{1.5})$.
 
-Consider the following process. We divide the $n$ points $X$ arbitrarily into $m=n/3k$ set $M_1,\ldots,M_m$. Denote by 
-$$ \tilde{\cost}(X) = \sum_{i=1}^m \cost^*(M_i)$$
-clearly $\tilde{\cost}(X) \leq \cost^*(X)$ and in reasonable settings is strictly lower. We store in memory any set $M$ such that $\cost^*(M) \geq \alpha \eps^2 \tilde{\cost}(X)/ \log(n)\log(1/\delta)$ for some sufficiently small universal constant $\alpha$. Notice that there can be at most $O(\log(n)\log(1/\delta)/\eps^2)$ such sets. For the other sets we apply the compact operation. This results in (1) a set of at most $n/3$ points of weight $1$ that were not paired in the compact operation, and (2) a set of at most $n/2$ points of weight $2$ that we chosen in the compact operation. We repeat the process for the set of at most $n/3$ points until all points are either in the stored sets $M$ or the points of weight $2$.
+\begin{theorem}
+By running the sketching algorithm with $\tilde{\eps} = \beta_1 \eps/\log(n/m_0)^{1.5}$ and $\tilde{\delta} = \beta_2 \delta / \log(n/m_0)$ for some universal constants $\beta_1,\beta_2$ we obtain a coreset $X'$ of size 
+$$ O\left( \log(n/m_0)^2 \left( k+\frac{ z \alpha^2 \log(n/m_0)^3 \left(\log(1/\delta)+\log(n/m_0) \right)}{\eps^2} \right) \right) $$
+that for any fixed $k$-center set $C$, w.p.\ at least $1-\delta$ has the property 
+$$ \left| \cost(C,X) - \cost(C,X') \right| < \eps \cost(C,X)$$
+\end{theorem}
 
-At the end of the process we have that there are at most $n/2$ points of weight $2$, since no point is chosen more than once and the total weight is at most $n$. Also, the number of stored sets is at most $O(\log(n)^2\log(1/\delta)/\eps^2)$. Denote the remaining set of points by $X'$. Denote by $\cal M$ the set sets $M$ that were not stored. For every $M \in {\cal M}$ let $M'$ be the resulting set after compaction. We have for any set of $k$ centers $C$ that
-$$ \cost(C,X) - \cost(C,X') = \sum_{M \in {\cal M}} \cost(C,M) - \cost(C,M')  $$
+%Notice that the cost here takes into account the weights of the points in $X(o),X_i(o)$. By summing over all compactors $o$ and noticing that the outputs $X_1(o), X_2(o)$ are always the inputs of other compactors we conclude that 
+%$$\cost(C,X) - \sum_{o \in O} \cost(C,X_0(o)) = $$
+%$$\sum_{o \in O} \cost(C,X(o)) -  \cost\left(C,X_0(o) \cup X_1(o) \cup X_2(o) \right) \preceq $$
+%$$\N \left(0,\frac{\eps^2 \sum_o \cost(C,X(o))^2}{  \log(1/\delta)} \right)$$
+%
 
-In order to bound the absolute value of this expression we use Hoeffding's inequality. The important measure corresponding to the expression is the sum
-$$\sum_{M \in {\cal M}} |\cost(C,M) - \cost(C,M')|^2  $$
-By the discussion above we have
-$$\sum_{M \in {\cal M}} |\cost(C,M) - \cost(C,M')|^2  \leq \sum_{M \in {\cal M}} 4\cost^*(M)^2  $$
-Now, since the $M$'s come from $\log(n)$ different partitions we have
-$$ \sum \cost^*(M) \leq \log(n) \tilde{\cost}(X) $$
-Next, we have that for any $M \in {\cal M}$, $\cost^*(M) \leq  \alpha \eps^2 \tilde{\cost}(X)/\log(n) \log(1/\delta)$. Hence, 
-$$\sum_{M \in {\cal M}} |\cost(C,M) - \cost(C,M')|^2  \leq \sum_{M \in {\cal M}} 4\cost^*(M)^2  \leq $$
-$$\sum_{M \in {\cal M}} 4\cost^*(M) \cdot \max_{M \in {\cal M}} \cost^*(M) \leq 4\log(n) \tilde{\cost}(X) \cdot  \alpha \eps^2 \tilde{\cost}(X)/\log(n) \log(1/\delta) = $$
-$$ 4 \alpha \eps^2 \tilde{\cost}(X)^2 / \log(1/\delta)$$
-We may now apply Hoeffding's inequality 
-$$ \Pr[|\cost(C,X) - \cost(C,X')| > \eps \tilde{\cost}(X)] \leq 2\exp(-2 \eps^2 \tilde{\cost}(X)^2 / (4 \alpha \eps^2 \tilde{\cost}(X)^2 / \log(1/\delta))) \leq \delta$$
-for sufficiently small $\alpha$.
 
-\section{mutiple layers}
-Repeating the above process on the set of at most $n/2$ items of weight $2$, and repeatedly for at most $\log_2(n)$ times, results in a core-set $X'$ such that for any set $C$ of centers 
-$$ \Pr[|\cost(C,X) - \cost(C,X')| > \eps \sqrt{\log(n)} \tilde{\cost}(X)] \leq \delta$$
-Hence, by setting $\eps' = \eps /\sqrt{\log(n)}$ we get the required result. The total number of points in the core-set is at most 
-$$O(\log(n)^4 k \log(1/\delta)/\eps^2)$$ 
-One extra power of $\log(n)$ is due to the new $\eps'$. The other is since the process was repeated $\log(n)$ many times.
 
-Now, for achieving a core-set for all possible center sets, it suffices to union bound over all partitions of the $n$ points, meaning for $\delta \geq n^{-k}$. We get that a core-set of size
-$$O(\log(n)^5 k^2 \log(1/\delta)/\eps^2)$$ 
-is constructible that simoultaniously preserves the costs of all possible centers up to a multiplicative amount of $(1+\eps)$
 
+
+%
+%\section{compact operations}
+%We define the generalized $k$-medians problem as follows. A $p$-semi-metric space is a space with a distance function $d$ such that (1) $d(x,y) \geq 0$ (2) $d(x,y)=0$ iff $x=y$ and (3) $d(x,y) \leq p(d(x,z) + d(z,y))$ for any $z$. \note{I'll just assume distance - but this works for any constant $p$.}
+%
+%Given $n$ points $X = \{x_1,\ldots,x_n\}$ in a metric space, the $k$ means cost of a fixed set of centers $C = \{c_1,\ldots,c_k\}$ is 
+%$$ \text{COST}(C,X) = \sum_i \min_j d(x_i,c_j)$$
+%The $k$ medians problem is that of finding the $k$ centers minimizing the above cost for a given set of points $X$. 
+%
+%
+%%Denote by $c_1^*,\ldots,c_k^*$ a set of centers achieving the smallest cost. Assume it is well-defined by imposing an arbitrary order over all possible $k$-tuples of the domain. Denote
+%%$$ \cost^*(x_i) = \min_j d(x_i,c_j^*)$$
+%%the cost associated with the point $x_i$ in the optimal solution
+%
+%
+%
+%Consider the following compact operation on $3k$ points. First, find a $2$-approximate $\tilde{c}_1,\ldots,\tilde{c}_2$ solution for $k$-means for these $m=3k$ points $M=\{x_1,\ldots,x_{3k}\}$. Now, define the cluster of a point $x$ as $\min_j d(x,\tilde{c}_j)$. Next find $k$ pairs of points, where we abuse notations and denote them by $(x_1,x_2),\ldots,(x_{2k-1},x_{2k})$ such that for any odd $i$, $x_i,x_{i+1}$ are in the same cluster.
+%
+%We observe that 
+%$$ \sum_{i=1}^k d(x_{2i-1},x_{2i}) \leq \sum_{i=1}^k d(x_{2i-1},\tilde{c}_{j(2i-1)}) + d(x_{2i},,\tilde{c}_{j(2i)}) $$
+%with $j(i)$ the cluster for which point $x_i$ belongs to. Hence
+%
+%\begin{equation} \label{eq:distance_cost}
+%\sum_{i=1}^k d(x_{2i-1},x_{2i}) \leq \sum_{i=1}^{3k} d(x_{i},\tilde{c}_{j(i)}) \leq 2\cost^*(M) 
+%\end{equation}
+%Here, $\cost^*(M)$ is the cost of the optimal $k$-means for the set of points $M$ and $C$ is an arbitrary set of $k$ centers.
+%
+%Now, consider the following compact operation. In each of the above chosen pairs, one point is chosen uniformly at random. The non-chosen point is discarded, and the chosen point gets a weight of $2$. Denote by $M'$ the random set of points after this compact operation. Notice that for any set of $k$ centers $C$ we have
+%$$ \E[\cost(c,M')] = \sum_{i=1}^{3k} \E[Z_i] \min_j d(x_i,c_j)$$
+%where $Z_i$ is a random variable that always takes a value of $1$ for a point that is not paired, and takes a value of either $0$ or $2$ uniformly at random for paired points. It follows that $\E[Z_i]=1$ and 
+%$$ \E[\cost(C,M')] = \sum_{i=1}^{3k} \E[Z_i] \min_j d(x_i,c_j) = \cost(C,M)$$
+%
+%Now, let us bound the worst case deviation from the mean. For every chosen pair of points $(x,x')$ we have that both points are in the same cluster defined by a center $c$. Hence, by the triangle inequality we have that
+%$$ |\min_j d(x,c_j) - \min_j d(x',c_j)| =   | d(x,c) - d(x',c)| \leq d(x,x')$$
+%meaning that  by Equation~\eqref{eq:distance_cost},
+%$$ |\cost(C,M') - \cost(C,M)| \leq 2\cost^*(M)  $$
+%
+%\section{one layer}
+%In the following we describe a sequence of compact operations that result in a core-set consisting of (1) a small set of points of weight $1$ and (2) a set of at most $n/2$ points of weight $2$. As input, this process requires parameters $\eps,\delta >0$. The process is designed such that the core-set induces the same cost, up to an additive error of at most roughly $\eps \cost^*(X)$ with probability $1-\delta$. The small size of (1) will in fact be of size  $O(\log(n)^2 k \log(1/\delta)/\eps^2)$.
+%
+%Consider the following process. We divide the $n$ points $X$ arbitrarily into $m=n/3k$ set $M_1,\ldots,M_m$. Denote by 
+%$$ \tilde{\cost}(X) = \sum_{i=1}^m \cost^*(M_i)$$
+%clearly $\tilde{\cost}(X) \leq \cost^*(X)$ and in reasonable settings is strictly lower. We store in memory any set $M$ such that $\cost^*(M) \geq \alpha \eps^2 \tilde{\cost}(X)/ \log(n)\log(1/\delta)$ for some sufficiently small universal constant $\alpha$. Notice that there can be at most $O(\log(n)\log(1/\delta)/\eps^2)$ such sets. For the other sets we apply the compact operation. This results in (1) a set of at most $n/3$ points of weight $1$ that were not paired in the compact operation, and (2) a set of at most $n/2$ points of weight $2$ that we chosen in the compact operation. We repeat the process for the set of at most $n/3$ points until all points are either in the stored sets $M$ or the points of weight $2$.
+%
+%At the end of the process we have that there are at most $n/2$ points of weight $2$, since no point is chosen more than once and the total weight is at most $n$. Also, the number of stored sets is at most $O(\log(n)^2\log(1/\delta)/\eps^2)$. Denote the remaining set of points by $X'$. Denote by $\cal M$ the set sets $M$ that were not stored. For every $M \in {\cal M}$ let $M'$ be the resulting set after compaction. We have for any set of $k$ centers $C$ that
+%$$ \cost(C,X) - \cost(C,X') = \sum_{M \in {\cal M}} \cost(C,M) - \cost(C,M')  $$
+%
+%In order to bound the absolute value of this expression we use Hoeffding's inequality. The important measure corresponding to the expression is the sum
+%$$\sum_{M \in {\cal M}} |\cost(C,M) - \cost(C,M')|^2  $$
+%By the discussion above we have
+%$$\sum_{M \in {\cal M}} |\cost(C,M) - \cost(C,M')|^2  \leq \sum_{M \in {\cal M}} 4\cost^*(M)^2  $$
+%Now, since the $M$'s come from $\log(n)$ different partitions we have
+%$$ \sum \cost^*(M) \leq \log(n) \tilde{\cost}(X) $$
+%Next, we have that for any $M \in {\cal M}$, $\cost^*(M) \leq  \alpha \eps^2 \tilde{\cost}(X)/\log(n) \log(1/\delta)$. Hence, 
+%$$\sum_{M \in {\cal M}} |\cost(C,M) - \cost(C,M')|^2  \leq \sum_{M \in {\cal M}} 4\cost^*(M)^2  \leq $$
+%$$\sum_{M \in {\cal M}} 4\cost^*(M) \cdot \max_{M \in {\cal M}} \cost^*(M) \leq 4\log(n) \tilde{\cost}(X) \cdot  \alpha \eps^2 \tilde{\cost}(X)/\log(n) \log(1/\delta) = $$
+%$$ 4 \alpha \eps^2 \tilde{\cost}(X)^2 / \log(1/\delta)$$
+%We may now apply Hoeffding's inequality 
+%$$ \Pr[|\cost(C,X) - \cost(C,X')| > \eps \tilde{\cost}(X)] \leq 2\exp(-2 \eps^2 \tilde{\cost}(X)^2 / (4 \alpha \eps^2 \tilde{\cost}(X)^2 / \log(1/\delta))) \leq \delta$$
+%for sufficiently small $\alpha$.
+%
+%\section{mutiple layers}
+%Repeating the above process on the set of at most $n/2$ items of weight $2$, and repeatedly for at most $\log_2(n)$ times, results in a core-set $X'$ such that for any set $C$ of centers 
+%$$ \Pr[|\cost(C,X) - \cost(C,X')| > \eps \sqrt{\log(n)} \tilde{\cost}(X)] \leq \delta$$
+%Hence, by setting $\eps' = \eps /\sqrt{\log(n)}$ we get the required result. The total number of points in the core-set is at most 
+%$$O(\log(n)^4 k \log(1/\delta)/\eps^2)$$ 
+%One extra power of $\log(n)$ is due to the new $\eps'$. The other is since the process was repeated $\log(n)$ many times.
+%
+%Now, for achieving a core-set for all possible center sets, it suffices to union bound over all partitions of the $n$ points, meaning for $\delta \geq n^{-k}$. We get that a core-set of size
+%$$O(\log(n)^5 k^2 \log(1/\delta)/\eps^2)$$ 
+%is constructible that simoultaniously preserves the costs of all possible centers up to a multiplicative amount of $(1+\eps)$
+%
 \bibliographystyle{plain}
-\bibliography{coresets}
+\bibliography{clustering-coresets}
 
 \end{document}
 
