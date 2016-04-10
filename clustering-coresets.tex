@@ -137,10 +137,20 @@ for $\eps = O(1/\log(n/m_0)^{1.5})$.
 
 \begin{theorem}
 By running the sketching algorithm with $\tilde{\eps} = \beta_1 \eps/\log(n/m_0)^{1.5}$ and $\tilde{\delta} = \beta_2 \delta / \log(n/m_0)$ for some universal constants $\beta_1,\beta_2$ we obtain a coreset $X'$ of size 
-$$ O\left( \log(n/m_0)^2 \left( k+\frac{ z \alpha^2 \log(n/m_0)^3 \left(\log(1/\delta)+\log(n/m_0) \right)}{\eps^2} \right) \right) $$
+$$ O\left( \log(n/m_0)^2 \left( k+\frac{ z \alpha^2 \log(n/m_0)^3 \left(\log(1/\delta)+\log\log(n/m_0) \right)}{\eps^2} \right) \right) $$
 that for any fixed $k$-center set $C$, w.p.\ at least $1-\delta$ has the property 
 $$ \left| \cost(C,X) - \cost(C,X') \right| < \eps \cost(C,X)$$
 \end{theorem}
+
+\note{explain why the corollary below is true}
+\begin{corollary}
+By setting $\delta = n^{\log(n)k}$ we get a coreset $X'$ of size
+$$ O\left( \frac{ z \alpha^2 \log(n/m_0)^7 k }{\eps^2} \right)  $$
+such that any $(1+\eps)$-optimal solution for it is a $(1+\eps)$-optimal solution for $X$.
+\end{corollary}
+
+Notice that the coreset contains items of weights having powers of $2$, hence the same sketching can be seperately on the items of equal weights. This can be applied with the same $\eps$ and $\delta = \delta/\log(n/m_0)$. The resulting sketch is of size
+$$ O\left( \frac{ z \alpha^2 \log(n/m_0)^2 \log\left(z \alpha \log(n/m_0) k /\eps \right)^7 k }{\eps^2} \right)  $$
 
 %Notice that the cost here takes into account the weights of the points in $X(o),X_i(o)$. By summing over all compactors $o$ and noticing that the outputs $X_1(o), X_2(o)$ are always the inputs of other compactors we conclude that 
 %$$\cost(C,X) - \sum_{o \in O} \cost(C,X_0(o)) = $$
