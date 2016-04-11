@@ -67,7 +67,7 @@ According to \cite{AggarwalDK09}, adaptively sampling $O(k)$ points from $X$ giv
 
 \section{Compact operations}
 The core of our techniques is a compact operation. This operation gets as input a set $M$ of $m$ points, and outputs a set $M'$ of $m' \leq 2m/3$ points of weights 1 and $2$ such that for any fixed $k$ centers $C$,
-$$ \cost(C,M) = \cost(C,M) (1 \pm \eps) $$
+$$ \cost(C,M') = \cost(C,M) (1 \pm \eps) $$
 w.h.p. The compact operation requires an oracle to a constant factor approximation algorithm for $k$-medians. This oracle provides a set of $k$ centers whose cost is at most $\alpha>1$ times the minimum obtainable cost.
 The compact operation is described in Algorithm~\ref{alg:shrink}.
 
@@ -99,7 +99,8 @@ where the $Y_{x,x'}$ are i.i.d.\ uniform Rademacher variables. The first immedia
 meaning that the error is unbiased. Furthermore, notice that 
 $$\forall (x,x') \in P, \ \ |d(x,C)-d(x',C)| \leq z d(x,x') \leq \frac{z \eps^2 \topt}{z \alpha^2 \log(1/\delta)} \leq \frac{\eps^2 \cost(C,M)}{ \alpha \log(1/\delta)}$$
 and
-$$\sum_{(x,x') \in P}|d(x,C)-d(x',C)| \leq z \sum_{(x,x') \in P} d(x,C) + d(x',C) \leq \alpha \cost(C,M)$$
+\note{I don't understand this... I think the semi-metric triangle inequality doesn't give that. What am I missing? (It does still work for $k$-medians with $z=1$ though...)}
+$$\sum_{(x,x') \in P}|d(x,C)-d(x',C)| \leq \sum_{(x,x') \in P} d(x,C) + d(x',C) \leq \alpha \cost(C,M)$$
 By applying the inequality $\sum a_i^2 \leq \max_i a_i \cdot \sum |a_i|$ we get
 \begin{equation} \label{eq:compact:sqsum}
 \sum_{(x,x') \in P}\left( d(x,C)-d(x',C) \right)^2 \leq \frac{\eps^2 \cost(C,M)^2}{  \log(1/\delta)}
