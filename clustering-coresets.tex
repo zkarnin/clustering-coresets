@@ -55,60 +55,103 @@ abstract\end{abstract}
 \section{Preliminaries}
 For a random variable $Y$ we write $Y \preceq \N(\mu,\sigma^2)$ to denote that $Y$ is a sub-gaussian with mean $\mu$ and variance $\sigma^2$.
 
-Let $\cal X$ be a semi-metric space endowed with a $z$-semi-metric $d$. Recall that a $z$-semi metric $d$ has the properties (1) $d(x,y)=d(y,x)$ (2) $d(x,y) \geq 0$ with equality iff $x=y$ and (3) $d(x,w) \leq z(d(x,y)+d(y,w))$. Our results apply to the generelized $k$-medians problem defined as follows
+Let $\cal X$ be a metric space endowed with a metric $d$. Recall that a metric $d$ has the properties (1) $d(x,y)=d(y,x)$ (2) $d(x,y) \geq 0$ with equality iff $x=y$ and (3) $d(x,w) \leq d(x,y)+d(y,w)$. Our results apply to the generelized $k$-medians problem defined as follows
 \begin{definition}
-In the (generalized) $k$-medians problem, the input is a set of points $X = \{x_1,\ldots,x_n\} \subseteq {\cal X}$. The objective is to find a set of $k$ centers $C = \{c_1,\ldots,c_k\}$ minimizing the cost 
-$$\cost(C,X) = \sum_{x \in X} \min_{c \in C} d(x,c)$$
+In the (generalized) $k$-medians problem, the input is a set of points $X = \{x_1,\ldots,x_n\} \subseteq {\cal X}$, and a scalar $z \geq 1$. The objective is to find a set of $k$ centers $C = \{c_1,\ldots,c_k\}$ minimizing the cost 
+$$\cost(C,X) = \sum_{x \in X} \min_{c \in C} d(x,c)^z$$
 \end{definition}
 In what follows we write $d(x,C) = \min_{c \in C}d(x,c)$ for short.
 
-According to \cite{AggarwalDK09}, adaptively sampling $O(k)$ points from $X$ gives a constant factor approximation to $k$-means.
+\note{
+According to \cite{AggarwalDK09}, adaptively sampling $O(k)$ points from $X$ gives a constant factor approximation to $k$-means.}
 \note{elaborate, with an exact lemma}
 
 \section{Compact operations}
 The core of our techniques is a compact operation. This operation gets as input a set $M$ of $m$ points, and outputs a set $M'$ of $m' \leq 2m/3$ points of weights 1 and $2$ such that for any fixed $k$ centers $C$,
 $$ \cost(C,M') = \cost(C,M) (1 \pm \eps) $$
-w.h.p. The compact operation requires an oracle to a constant factor approximation algorithm for $k$-medians. This oracle provides a set of $k$ centers whose cost is at most $\alpha>1$ times the minimum obtainable cost.
+w.h.p. The compact operation requires an oracle to a constant factor approximation algorithm for generalized $k$-medians. This oracle provides a set of $k$ centers whose cost is at most $\alpha>1$ times the minimum obtainable cost.
 The compact operation is described in Algorithm~\ref{alg:shrink}.
 
 
 \begin{algorithm} 
 \begin{algorithmic}
 \caption{Shrink} \label{alg:shrink}
-\State {\bf Input} $\eps,\delta >0$, a set $M \subseteq {\cal X}$, and an oracle for $\alpha$-optimal solution for $k$-medians.
-\State Invoke the oracle to find $\alpha$-optimal cluster centers $C$. Denote by $\topt$ its cost.
-\State arbitrarily divide into pairs all points that are in the same cluster having $d(x,C) \leq \eps^2 \topt / \left(z \alpha^2 \log(1/\delta)\right)$.
-\State Let $M'$ be the set containing all unpaired points with weight $1$, and a uniformly random item from each pair with weight $2$.
+\State {\bf Input} $\sigma >0$, $z \geq 1$, a set $M \subseteq {\cal X}$, and an oracle for $\alpha$-optimal solution for the generalized $k$-medians problem with exponent $z$.
+\State Invoke the oracle to find $\alpha$-optimal cluster centers $C^*$. Denote by $\topt$ its cost.
+\State Compute $M_1 \subseteq M$, the set of points that $d(x,C^*)^z \leq \sigma^2 \topt$.
+\State Compute $M_2 \subseteq M_1$, the set of points having at least $r = \ceil{\sigma^{-\frac{2z-2}{z+1}}}$ points from $M_1$ in their cluster
+\State arbitrarily divide into pairs points in $M_2$ that are in the same cluster.
+\State Let $M'$ be the set containing all unpaired points with weight $1$, and a uniformly random points from each pair with weight $2$.
 \State {\bf Output} $M'$
 \end{algorithmic}
 \end{algorithm}
 
 We begin the analysis with a simpler observation regarding the size of $M'$. By Markov's inequality, at most 
-$$\ceil{\frac{ z \alpha^2 \log(1/\delta)}{\eps^2}}$$
-points are excluded from pairing due to having a large cost. In addition, there may be at most $1$ point left unpaired in each cluster due to an odd number of points. Hence, we must have at most 
-$$m_0 = \ceil{k+\frac{ z \alpha^2 \log(1/\delta)}{\eps^2}}$$
-unpaired points, and it follows that 
+$\ceil{\sigma^{-2}}$
+points are in  $M \setminus M_1$, and at most $r k = \ceil{\sigma^{-\frac{2z-2}{z+1}}} k$ points are in $M_1 \setminus M_2$. In $M_2$ there can be at most $k$ additional points that have not been paired due to having an odd number of points in the intersection of $M_2$ and the cluster. Hence, at most 
+$$m_0 = \ceil{\sigma^{-2}} +  \ceil{\sigma^{-\frac{2z-2}{z+1}}} k + k$$
+remain unpaired, and it follows that 
 $$ |M'| \leq (|M|+m_0)/2 $$
 
+
 Let us now discuss the cost associated with $M,M'$ and an arbitrary fixed $k$-cluster set $C$. Denote by $P$ the set of pairs of points we obtain during the compact operation. Then
-$$ \cost(C,M') - \cost(C,M) = \sum_{(x,x') \in P} Y_{x,x'} \left( d(x,C) - d(x',C) \right) $$
+$$ \cost(C,M') - \cost(C,M) = \sum_{(x,x') \in P} Y_{x,x'} \left( d(x,C)^z - d(x',C)^z \right) $$
 where the $Y_{x,x'}$ are i.i.d.\ uniform Rademacher variables. The first immediate conclusion is that
 \begin{equation} \label{eq:compact_mean0}
 \E[\cost(C,M')] = \cost(C,M)
 \end{equation}
-meaning that the error is unbiased. Furthermore, notice that 
-$$\forall (x,x') \in P, \ \ |d(x,C)-d(x',C)| \leq z d(x,x') \leq \frac{z \eps^2 \topt}{z \alpha^2 \log(1/\delta)} \leq \frac{\eps^2 \cost(C,M)}{ \alpha \log(1/\delta)}$$
-and
-\note{I don't understand this... I think the semi-metric triangle inequality doesn't give that. What am I missing? (It does still work for $k$-medians with $z=1$ though...)}
-$$\sum_{(x,x') \in P}|d(x,C)-d(x',C)| \leq \sum_{(x,x') \in P} d(x,C) + d(x',C) \leq \alpha \cost(C,M)$$
-By applying the inequality $\sum a_i^2 \leq \max_i a_i \cdot \sum |a_i|$ we get
-\begin{equation} \label{eq:compact:sqsum}
-\sum_{(x,x') \in P}\left( d(x,C)-d(x',C) \right)^2 \leq \frac{\eps^2 \cost(C,M)^2}{  \log(1/\delta)}
-\end{equation}
-By Equations~\eqref{eq:compact_mean0} and~\eqref{eq:compact:sqsum} we get
+meaning that the error is unbiased. It is also evident that the error is subgaussian, hence to obtain a high probability bound, it suffices to bound its variance. We aim to bound the variance in terms of $\cost(C,M)$ hence we begin by lower bounding $\cost(C,M)$. Let $x,x',y \in M_2$ be points in the same cluster where $(x,x') \in P$ and $d(x,C) \geq d(x',C)$. Define $\rho >0$ to be the scalar having $d(x,C)^z = \rho \topt$. We have for $C^*$ being the $\alpha$-optimal clustering,
+$$ d(y,C) \geq d(x,C) - d(x,y) \geq d(x,C) - d(x,C^*) - d(y,C^*) \geq \topt^{1/z} (\rho^{1/z} - 2\sigma^{2/z}) $$
+we thus obtain the lower bound for the cost of $C$, of
+%$$ \cost(C,M) \leq \topt \cdot \max \left\{ \frac{1}{\alpha}, \frac{ (\rho^{1/z} - 2\sigma^{2/z})^z}{\sigma^{\frac{2z-2}{z+1}}} \right\}$$
+$$ \cost(C,M) \leq \topt \cdot \max \left\{ \frac{1}{\alpha}, (\rho^{1/z} - 2\sigma^{2/z})^z r \right\}$$
+as there are at least $r$ points in the intersection or the cluster of $(x,x')$ and $M_2$.
+
+We are now ready to upper bound $|d(x,C)^z - d(x',C)^z|$ in terms of $\topt$. We use the inequality for $a \geq b \geq 0$ $z$ a natural number,
+$$ a^z-b^z = (a-b)(a^{z-1}+a^{z-2}b+\ldots+b^{z-1})  \leq (a-b)z a^{z-1}$$
+to obtain
+$$   \left| d(x,C)^z - d(x',C)^z \right| \leq z \left( d(x,C) - d(x',C) \right) (\rho \topt)^{\frac{z-1}{z}} \leq \topt \cdot z \sigma^{2/z} \rho^{\frac{z-1}{z}} $$
+Hence we get the following bound on the ratio
+$$ \frac{ \left| d(x,C)^z - d(x',C)^z \right|}{\cost(C,M)} \leq \frac{z \sigma^{2/z} \rho^{\frac{z-1}{z}}} {\max\left\{ 1/\alpha, \left( \rho^{1/z} - 2\sigma^{2/z}\right)^z r \right\}}$$
+For further bounding the ratio we split into two cases based on whether $\rho < 4\sigma^2$. In the case where $\rho < 4\sigma^2$ we have
+\begin{equation} \label{eq:case1}
+\frac{ \left| d(x,C)^z - d(x',C)^z \right|}{\cost(C,M)} \leq \alpha z 4^{z-1} \sigma^{2} 
+\end{equation} 
+On the other hand, if $\rho \geq 4\sigma^2$ then $\rho^{1/z} - 2\sigma^{2/z} \geq 0.5 \rho^{1/z}$, hence
+$$ \frac{ \left| d(x,C)^z - d(x',C)^z \right|}{\cost(C,M)} \leq \frac{2 z \sigma^{2/z} \rho^{\frac{z-1}{z}}} {1/\alpha + 2^{-z} \rho r } = \left(\frac{\sigma^2}{\rho}\right)^{1/z} \cdot   \frac{2 z \rho} {1/\alpha + 2^{-z} \rho r } $$
+The above expression can be shown to have a unique minimum at $\rho = \frac{(z-1)2^z}{\alpha r}$. Substituting gives
+$$ \frac{ \left| d(x,C)^z - d(x',C)^z \right|}{\cost(C,M)} \leq \left(\frac{\rho}{\sigma^2}\right)^{1/z} \cdot 2\alpha \rho = (z-1)^{\frac{z+1}{z}}2^{z+2} \alpha^{-1/z}  \sigma^{2/z} r^{-\frac{1+z}{z}} \leq$$
+$$ z 2^{z+3}   \sigma^{2/z} r^{-\frac{1+z}{z}} $$
+Since $r \geq \sigma^{-\frac{2z-2}{z+1}}$ we get 
+\begin{equation} \label{eq:case2}
+\frac{ \left| d(x,C)^z - d(x',C)^z \right|}{\cost(C,M)} \leq z 2^{z+3}   \sigma^{2} 
+\end{equation} 
+By combining equations~\eqref{eq:case1} and~\eqref{eq:case2} we conclude that
+$$\frac{ \left| d(x,C)^z - d(x',C)^z \right|}{\cost(C,M)} \leq \alpha z 4^{z+1}   \sigma^{2}  $$
+We also have a trivial bound of
+$$\sum_{(x,x') \in P} \frac{ \left| d(x,C)^z - d(x',C)^z \right|}{\cost(C,M)} \leq 1  $$
+that combined with the above inequality yields to the following bound on the variance of the error
 \begin{equation} \label{eq:compact_subg}
-\cost(C,M') - \cost(C,M) \preceq \N \left(0,\frac{\eps^2 \cost(C,M)^2}{  \log(1/\delta)} \right)
+\sum_{(x,x') \in P}  \left| d(x,C)^z - d(x',C)^z \right|^2\leq \alpha z 4^{z+1}   \sigma^{2} \cost(C,M)^2 
 \end{equation}
+
+%.\\
+%.\\
+%
+%
+%Furthermore, notice that 
+%$$\forall (x,x') \in P, \ \ |d(x,C)-d(x',C)| \leq z d(x,x') \leq \frac{z \eps^2 \topt}{z \alpha^2 \log(1/\delta)} \leq \frac{\eps^2 \cost(C,M)}{ \alpha \log(1/\delta)}$$
+%and
+%\note{I don't understand this... I think the semi-metric triangle inequality doesn't give that. What am I missing? (It does still work for $k$-medians with $z=1$ though...)}
+%$$\sum_{(x,x') \in P}|d(x,C)-d(x',C)| \leq \sum_{(x,x') \in P} d(x,C) + d(x',C) \leq \alpha \cost(C,M)$$
+%By applying the inequality $\sum a_i^2 \leq \max_i a_i \cdot \sum |a_i|$ we get
+%\begin{equation} \label{eq:compact:sqsum}
+%\sum_{(x,x') \in P}\left( d(x,C)-d(x',C) \right)^2 \leq \frac{\eps^2 \cost(C,M)^2}{  \log(1/\delta)}
+%\end{equation}
+%By Equations~\eqref{eq:compact_mean0} and~\eqref{eq:compact:sqsum} we get
+%\begin{equation} \label{eq:compact_subg}
+%\cost(C,M') - \cost(C,M) \preceq \N \left(0,\frac{\eps^2 \cost(C,M)^2}{  \log(1/\delta)} \right)
+%\end{equation}
 
 \section{Streaming algorithm}
 The streaming algorithm is based on the above compact operation. We maintain a set of \emph{Compactors}. Each such compactor is fed items and stores them in a buffer. Once the buffer contains $3m_0$ (for $m_0 = \ceil{k+\frac{ z \alpha^2 \log(1/\delta)}{\eps^2}}$) items, the compacter performs a compact operation. As a result it's buffer is emptied and two streams are outputted. One contains the (at most $m_0$) elements of $M'$ of weight $1$. The other contains the (at most $3m_0/2$) elements of $M'$ of weight $2$. Each stream is fed into a different compactor. All compactors observing items of weight $2^h$ output the items of weight $2^{h+1}$ to the same compactor.
